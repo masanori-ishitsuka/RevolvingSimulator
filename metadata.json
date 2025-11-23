@@ -1,0 +1,5 @@
+{
+  "name": "Ribo-Sim Visualizer",
+  "description": "A simulation tool for Revolving Credit (Ribo-barai) repayments, visualizing the impact of interest rates and repayment amounts over time.",
+  "requestFramePermissions": []
+}

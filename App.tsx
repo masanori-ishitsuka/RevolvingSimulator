@@ -60,9 +60,6 @@ const calculateProjectedInterest = (
     
     const principal = payment - interest;
     
-    // If principal <= 0, we are not making progress (infinite loop scenario).
-    // We still sum the interest for this period to show the burden.
-    
     currentBal -= principal;
     totalInt += interest;
     
@@ -98,52 +95,34 @@ const calculateSimulation = (params: SimulationParams): SimulationResult => {
     remainingInterest: calculateProjectedInterest(balance, monthlyRepayment, annualInterestRate),
   });
 
+  let isInfinite = false;
+
   while (balance > 0 && month < MAX_MONTHS) {
     month++;
     
     // Calculate Interest for the current balance
     const interest = Math.floor(balance * monthlyRate);
 
-    // User requested termination condition:
-    // "返済予定金額+利息が毎月の追加利用額以下になったところで、返済完了としてください。"
-    // Interpretation: If the total outstanding debt (balance + current interest) is small enough 
-    // to be covered by the monthly turnover (new charge), we consider the debt "cleared" 
-    // effectively for the purpose of the graph.
-    if (monthlyNewCharge > 0 && (balance + interest) <= monthlyNewCharge) {
-      // Treat as paid off in this step
-      const finalPayment = balance + interest;
-      totalPaid += finalPayment;
-      totalInterest += interest;
-      cumulativePrincipal += balance; // The rest of principal is paid
-      
-      data.push({
-        month,
-        balance: 0,
-        principalPaid: balance,
-        interestPaid: interest,
-        totalPaid: totalPaid,
-        cumulativeInterest: totalInterest,
-        cumulativePrincipal: cumulativePrincipal,
-        remainingInterest: 0
-      });
-      
-      balance = 0;
-      break;
-    }
-    
     // Determine payment amount (cannot exceed balance + interest)
     let payment = monthlyRepayment;
     
-    // Handle payoff phase
+    // Handle payoff phase logic inside calculation
     if (balance + interest <= payment) {
       payment = balance + interest;
     }
 
     const principal = payment - interest;
     
+    // Check for runaway balance before update (prevent overflow)
+    if (balance > initialBalance * 5 && balance > 1000000) {
+        isInfinite = true;
+        break;
+    }
+
+    const prevBalance = balance;
+    
     // Apply changes
     // Balance reduces by principal paid, increases by new charges
-    const prevBalance = balance;
     balance = balance - principal + monthlyNewCharge;
     
     // Safety floor
@@ -168,20 +147,41 @@ const calculateSimulation = (params: SimulationParams): SimulationResult => {
       remainingInterest: projectedInterest
     });
 
-    // Break early if balance exceeds a ridiculous amount to prevent graph scaling issues
-    if (balance > initialBalance * 10 && initialBalance > 0) {
+    // --- TERMINATION CONDITIONS ---
+
+    // 1. Balance reaches zero
+    if (balance <= 0) break;
+
+    // 2. User Requirement: Balance drops below Monthly Repayment
+    // This signifies the debt is effectively cleared or manageable within one cycle.
+    // If the remaining balance is less than what we pay monthly, we consider the simulation "done"
+    // to prevent the graph from trailing on with tiny balances or stabilized new charges.
+    if (balance < monthlyRepayment) {
         break;
     }
-    
-    // Check if we are stuck in a loop where we pay off exactly what we charge (balance stays same)
-    // and that balance equals the charge amount.
-    if (monthlyNewCharge > 0 && balance === prevBalance && balance <= monthlyNewCharge) {
-        break;
+
+    // 3. Stable State Check
+    // If balance stabilizes (e.g. paying off exactly the new charge amount), we should check if it's a "paid off" state or "stuck" state.
+    if (monthlyNewCharge > 0 && Math.abs(balance - prevBalance) <= 10) {
+        // If the balance is relatively low (close to the new charge amount), it means we are just cycling new charges.
+        // We consider this a success state (not infinite debt).
+        if (balance <= monthlyNewCharge * 1.5) {
+            break; 
+        }
+        
+        // If balance is stabilized at a high amount (where Interest + NewCharge ~= Repayment),
+        // it is effectively an infinite debt trap.
+        if (balance > monthlyRepayment) {
+             isInfinite = true;
+             break;
+        }
     }
   }
 
-  // If we hit MAX_MONTHS and balance is still > 0, then it's infinite.
-  const isInfinite = balance > 0;
+  // If we hit MAX_MONTHS and didn't break early, it's infinite.
+  if (month >= MAX_MONTHS) {
+    isInfinite = true;
+  }
 
   return {
     data: data,
@@ -263,10 +263,19 @@ export default function App() {
   });
 
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const [isEmbed, setIsEmbed] = useState(false);
 
   useEffect(() => {
     setResult(calculateSimulation(params));
   }, [params]);
+
+  useEffect(() => {
+    // Check for 'mode=embed' in URL parameters
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('mode') === 'embed') {
+      setIsEmbed(true);
+    }
+  }, []);
 
   // Derived check for "Danger Zone"
   const monthlyInterest = Math.floor(params.initialBalance * (params.annualInterestRate / 100 / 12));
@@ -274,24 +283,27 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
-          <div className="bg-indigo-600 p-2 rounded-lg">
-            <Calculator className="w-5 h-5 text-white" />
+      {/* Header - Hidden in embed mode */}
+      {!isEmbed && (
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
+            <div className="bg-indigo-600 p-2 rounded-lg">
+              <Calculator className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+              リボ払いシミュレーター
+            </h1>
           </div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight">
-            リボ払いシミュレーター
-          </h1>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content - Reduced padding in embed mode */}
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isEmbed ? 'py-4' : 'py-8'}`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Input Section */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 sticky top-24">
+            <div className={`bg-white rounded-2xl p-6 shadow-sm border border-slate-200 ${isEmbed ? '' : 'sticky top-24'}`}>
               <h2 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
                 <RefreshCcw className="w-5 h-5 text-indigo-500" />
                 設定条件
@@ -358,7 +370,7 @@ export default function App() {
           {/* Results Section */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Analysis Box (Moved here) */}
+            {/* Analysis Box */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-yellow-400" />
@@ -429,7 +441,8 @@ export default function App() {
               
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={result?.data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  {/* Changed bottom margin to 30 to show XAxis label */}
+                  <AreaChart data={result?.data} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
                     <defs>
                       <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
@@ -497,7 +510,7 @@ export default function App() {
 
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={result?.data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <AreaChart data={result?.data} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
                      <defs>
                       <linearGradient id="colorInterest" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
@@ -513,6 +526,7 @@ export default function App() {
                       dataKey="month" 
                       tick={{fontSize: 12}}
                       stroke="#94a3b8"
+                      label={{ value: '経過月数', position: 'insideBottomRight', offset: -5 }} 
                     />
                     <YAxis 
                       tickFormatter={(value) => `${value / 10000}万`} 
@@ -525,14 +539,7 @@ export default function App() {
                       contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                     />
                     <Legend verticalAlign="top" height={36}/>
-                    <Area 
-                      type="monotone" 
-                      dataKey="cumulativeInterest" 
-                      stackId="1" 
-                      name="支払い済みの利息" 
-                      stroke="#ef4444" 
-                      fill="url(#colorInterest)" 
-                    />
+                    {/* Swapped order: Principal first (bottom), then Interest (top) */}
                     <Area 
                       type="monotone" 
                       dataKey="cumulativePrincipal" 
@@ -540,6 +547,14 @@ export default function App() {
                       name="支払い済みの元金" 
                       stroke="#10b981" 
                       fill="url(#colorPrincipal)" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="cumulativeInterest" 
+                      stackId="1" 
+                      name="支払い済みの利息" 
+                      stroke="#ef4444" 
+                      fill="url(#colorInterest)" 
                     />
                   </AreaChart>
                 </ResponsiveContainer>

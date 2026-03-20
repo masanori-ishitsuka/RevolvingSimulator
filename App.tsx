@@ -210,42 +210,42 @@ const InputField = ({
   max?: number;
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-sm font-medium text-slate-600">{label}</label>
+    <label className="text-sm font-medium text-slate-400">{label}</label>
     <div className="relative">
       <input
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-800 font-medium"
+        className="w-full px-3 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-slate-100 font-medium bg-slate-800"
         step={step}
         min={min}
         max={max}
       />
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium pointer-events-none">
         {unit}
       </span>
     </div>
-    <input 
-        type="range" 
-        min={min} 
-        max={max || value * 2} 
+    <input
+        type="range"
+        min={min}
+        max={max || value * 2}
         step={step}
-        value={value} 
+        value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+        className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
     />
   </div>
 );
 
 const SummaryCard = ({ title, value, subtext, icon: Icon, colorClass }: { title: string, value: string, subtext?: string, icon: any, colorClass: string }) => (
-  <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-4">
+  <div className="bg-slate-900 p-5 rounded-xl border border-slate-700 shadow-sm flex items-start gap-4">
     <div className={`p-3 rounded-lg ${colorClass} bg-opacity-10 shrink-0`}>
       <Icon className={`w-6 h-6 ${colorClass.replace('bg-', 'text-')}`} />
     </div>
     <div>
-      <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-      <p className="text-2xl font-bold text-slate-800">{value}</p>
-      {subtext && <p className="text-xs text-slate-400 mt-1">{subtext}</p>}
+      <p className="text-sm font-medium text-slate-400 mb-1">{title}</p>
+      <p className="text-2xl font-bold text-slate-100">{value}</p>
+      {subtext && <p className="text-xs text-slate-500 mt-1">{subtext}</p>}
     </div>
   </div>
 );
@@ -280,15 +280,15 @@ export default function App() {
   const isDanger = params.monthlyRepayment <= monthlyInterest && params.initialBalance > 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-slate-950 pb-20">
       {/* Header - Hidden in embed mode */}
       {!isEmbed && (
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <header className="bg-slate-900 border-b border-slate-700 sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg">
+            <div className="bg-indigo-500 p-2 rounded-lg">
               <Calculator className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-xl font-bold text-slate-100 tracking-tight">
               リボ払いシミュレーター
             </h1>
           </div>
@@ -301,9 +301,9 @@ export default function App() {
           
           {/* Input Section */}
           <div className="lg:col-span-1 space-y-6">
-            <div className={`bg-white rounded-2xl p-6 shadow-sm border border-slate-200 ${isEmbed ? '' : 'sticky top-24'}`}>
-              <h2 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
-                <RefreshCcw className="w-5 h-5 text-indigo-500" />
+            <div className={`bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-700 ${isEmbed ? '' : 'sticky top-24'}`}>
+              <h2 className="text-lg font-bold text-slate-100 mb-5 flex items-center gap-2">
+                <RefreshCcw className="w-5 h-5 text-indigo-400" />
                 設定条件
               </h2>
               
@@ -335,9 +335,9 @@ export default function App() {
                 />
 
                 {isDanger && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                    <div className="text-sm text-red-700">
+                  <div className="bg-red-950 border border-red-800 rounded-lg p-3 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="text-sm text-red-300">
                       <p className="font-bold">警告: 返済額が少なすぎます</p>
                       <p>初月の利息({formatCurrency(monthlyInterest)})を下回っています。このままでは残高が減りません。</p>
                     </div>
@@ -354,7 +354,7 @@ export default function App() {
                 />
               </div>
 
-              <div className="mt-6 p-4 bg-indigo-50 rounded-lg text-xs text-indigo-700 leading-relaxed">
+              <div className="mt-6 p-4 bg-indigo-950 rounded-lg text-xs text-indigo-300 leading-relaxed">
                 <p className="flex items-center gap-1 font-semibold mb-1">
                   <Info className="w-3 h-3" />
                   シミュレーションの前提
@@ -422,13 +422,13 @@ export default function App() {
             )}
 
             {/* Chart 1: Remaining Balance & Future Interest */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-700">
               <div className="mb-6">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <TrendingDown className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                  <TrendingDown className="w-5 h-5 text-indigo-400" />
                   総支払残額の推移 (元金 + 予定利息)
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-400 mt-1">
                   利息を含めた返済予定の総残額の推移です。
                   {result?.isInfinite ? 
                     <span className="text-red-500 font-bold ml-1">残高が減らない、または増加しています！</span> : 
@@ -451,22 +451,22 @@ export default function App() {
                         <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.2}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                     <XAxis 
                       dataKey="month" 
                       label={{ value: '経過月数', position: 'insideBottomRight', offset: -5 }} 
                       tick={{fontSize: 12}}
-                      stroke="#94a3b8"
+                      stroke="#475569"
                     />
                     <YAxis 
                       tickFormatter={(value) => `${value / 10000}万`} 
                       tick={{fontSize: 12}}
-                      stroke="#94a3b8"
+                      stroke="#475569"
                     />
                     <Tooltip 
                       formatter={(value: number) => formatCurrency(value)}
                       labelFormatter={(label) => `${label}ヶ月目`}
-                      contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.97)', borderRadius: '8px', border: '1px solid #334155', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)', color: '#e2e8f0' }}
                     />
                     <Legend verticalAlign="top" height={36}/>
                     {/* Render Balance first (bottom) then Interest (top) */}
@@ -488,20 +488,20 @@ export default function App() {
                       fill="url(#colorRemainingInterest)" 
                       strokeWidth={2}
                     />
-                    <ReferenceLine y={params.initialBalance} stroke="#cbd5e1" strokeDasharray="3 3" label={{ position: 'top',  value: '開始時元金', fill: '#94a3b8', fontSize: 10 }} />
+                    <ReferenceLine y={params.initialBalance} stroke="#475569" strokeDasharray="3 3" label={{ position: 'top',  value: '開始時元金', fill: '#64748b', fontSize: 10 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Chart 2: Cumulative Repayment (Stacked) */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-700">
                <div className="mb-6">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
                   返済済額の積み上げ（元金 vs 利息）
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-400">
                   毎月支払っているお金の内訳です。<span className="text-red-500 font-bold">赤色（利息）</span>の部分が大きいほど、無駄な支払いを続けていることになります。
                 </p>
               </div>
@@ -519,22 +519,22 @@ export default function App() {
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0.4}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
                     <XAxis 
                       dataKey="month" 
                       tick={{fontSize: 12}}
-                      stroke="#94a3b8"
+                      stroke="#475569"
                       label={{ value: '経過月数', position: 'insideBottomRight', offset: -5 }} 
                     />
                     <YAxis 
                       tickFormatter={(value) => `${value / 10000}万`} 
                       tick={{fontSize: 12}}
-                      stroke="#94a3b8"
+                      stroke="#475569"
                     />
                     <Tooltip 
                       formatter={(value: number) => formatCurrency(value)}
                       labelFormatter={(label) => `${label}ヶ月目`}
-                      contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.97)', borderRadius: '8px', border: '1px solid #334155', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)', color: '#e2e8f0' }}
                     />
                     <Legend verticalAlign="top" height={36}/>
                     {/* Swapped order: Principal first (bottom), then Interest (top) */}
